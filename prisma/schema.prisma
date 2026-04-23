@@ -5,3 +5,82 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model User {
+  id    String @id @default(uuid())
+  google_id String? @unique
+  github_id String? @unique
+  email String @unique
+  email_verified_at DateTime?
+  name  String?
+  password String
+  status String @default("active")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  last_login_at DateTime?
+
+}
+
+model Sheet {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+
+  problems    Problem[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+
+  problems    ProblemCategory[]   // ✅ relation field
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model Problem {
+  id          String   @id @default(uuid())
+  sheetId     String
+  sheet       Sheet    @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String
+  slug        String   @unique
+
+  categories  ProblemCategory[]   // ✅ relation field (fixed)
+
+  externalLink String?
+  resourceLink String?
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+}
+
+model ProblemCategory {
+  problemId  String
+  categoryId String
+
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  category  Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, categoryId])   // composite PK
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+
+  userId    String?
+  action    String   // CREATE, UPDATE, DELETE
+  model     String
+
+  recordId  String?  // affected row id
+
+  before    Json?
+  after     Json?
+
+  createdAt DateTime @default(now())
+}
